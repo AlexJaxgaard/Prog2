@@ -111,7 +111,7 @@ public class ListGraph<T> implements Graph<T>, Serializable {
             throw new NoSuchElementException();
         }
 
-
+/*
         for (Set<Edge<T>> edgesForNode : nodes.values()) {
             edgesForNode.removeIf(element -> element.getDestination().equals(node));
             nodes.remove(node);
@@ -123,6 +123,14 @@ public class ListGraph<T> implements Graph<T>, Serializable {
                 nodes.remove(nodeToRemove);
             }
         }
+        */
+
+        Collection<Edge<T>> nodesFromThis = getEdgesFrom(node);
+        for (Edge<T> edge : nodesFromThis){
+            disconnect(edge.getDestination(), node);
+        }
+
+        nodes.remove(node);
 
     }
 
