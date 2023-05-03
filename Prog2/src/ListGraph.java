@@ -15,8 +15,16 @@ public class ListGraph<T> implements Graph<T>, Serializable {
     @Override
     public void connect(T node1, T node2, String name, int weight) {
 
-        if (!nodes.keySet().contains(node2) || !nodes.keySet().contains(node1)) {
+        if (weight < 0){
+            throw new IllegalArgumentException();
+        }
+
+        if (!nodes.containsKey(node2) || !nodes.containsKey(node1)) {
             throw new NoSuchElementException("No such city");
+        }
+
+        if (getEdgeBetween(node1, node2) != null){
+            throw new IllegalStateException();
         }
 
         for (Entry<T, Set<Edge<T>>> node : nodes.entrySet()) {
@@ -73,40 +81,54 @@ public class ListGraph<T> implements Graph<T>, Serializable {
 
     @Override
     public void disconnect(T node1, T node2) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'disconnect'");
+        if (!nodes.containsKey(node2) || !nodes.containsKey(node1)) {
+            throw new NoSuchElementException("No such city");
+        }
+
+
+        if (!pathExists(node1, node2)){
+            throw new IllegalStateException();
+        }
+
+        for (Entry<T, Set<Edge<T>>> node : nodes.entrySet()){
+            if (node.getKey().equals(node2)){
+                node.getValue().removeIf(edge -> edge.getDestination().equals(node1));
+            }
+        }
+
+        for (Entry<T, Set<Edge<T>>> node : nodes.entrySet()){
+            if (node.getKey().equals(node1)){
+                node.getValue().removeIf(edge -> edge.getDestination().equals(node2));
+            }
+        }
+
+
     }
 
     @Override
     public void remove(T node) {
-        Set<Edge<T>> edges = nodes.get(node);
         if (!nodes.containsKey(node)) {
             throw new NoSuchElementException();
         }
 
-        edges.clear();
 
         for (Set<Edge<T>> edgesForNode : nodes.values()) {
-            for (Iterator<Edge<T>> i = edgesForNode.iterator(); i.hasNext();) {
-                Edge<T> element = i.next();
-                if (element.getDestination() == node) {
-                    i.remove();
-                }
-
-            }
+            edgesForNode.removeIf(element -> element.getDestination().equals(node));
             nodes.remove(node);
 
+        }
+
+        for (T nodeToRemove : nodes.keySet()){
+            if (nodeToRemove == node){
+                nodes.remove(nodeToRemove);
+            }
         }
 
     }
 
     @Override
     public boolean pathExists(T from, T to) {
-        if (getEdgeBetween(from, to) == null) {
-            return false;
-        } else {
-            return true;
-        }
+        return getEdgeBetween(from, to) != null;
     }
 
     @Override
