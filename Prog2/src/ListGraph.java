@@ -81,10 +81,15 @@ public class ListGraph<T> implements Graph<T>, Serializable {
 
     @Override
     public void disconnect(T node1, T node2) {
+
+
+
         if (!nodes.containsKey(node2) || !nodes.containsKey(node1)) {
             throw new NoSuchElementException("No such city");
         }
-
+        if (getEdgeBetween(node1, node2) == null){
+            throw new IllegalStateException();
+        }
 
         if (!pathExists(node1, node2)){
             throw new IllegalStateException();
@@ -107,36 +112,49 @@ public class ListGraph<T> implements Graph<T>, Serializable {
 
     @Override
     public void remove(T node) {
+
         if (!nodes.containsKey(node)) {
             throw new NoSuchElementException();
         }
 
-/*
-        for (Set<Edge<T>> edgesForNode : nodes.values()) {
-            edgesForNode.removeIf(element -> element.getDestination().equals(node));
-            nodes.remove(node);
 
+
+        for (Set<Edge<T>> edgesOfNode : nodes.values()) {
+            edgesOfNode.removeIf(element -> element.getDestination() == node);
         }
-
-        for (T nodeToRemove : nodes.keySet()){
-            if (nodeToRemove == node){
-                nodes.remove(nodeToRemove);
-            }
-        }
-        */
-
-        Collection<Edge<T>> nodesFromThis = getEdgesFrom(node);
-        for (Edge<T> edge : nodesFromThis){
-            disconnect(edge.getDestination(), node);
-        }
-
         nodes.remove(node);
-
     }
 
+
+    private void dfs(T current, T searchedFor, Set <T> visited){
+        visited.add(current);
+        if(current.equals(searchedFor)){
+            System.out.println("Found!");
+            return;
+        }
+
+        if (nodes.get(current) == null){
+            return;
+        }
+
+        for(Edge edge : nodes.get(current)){
+
+
+
+            if(!visited.contains(edge.getDestination())){
+                dfs((T) edge.getDestination(),searchedFor,visited);
+            }
+        }
+
+    }
     @Override
-    public boolean pathExists(T from, T to) {
-        return getEdgeBetween(from, to) != null;
+    public boolean pathExists(T from, T to){
+
+
+
+        Set<T> visited = new HashSet<>();
+        dfs(from, to, visited);
+        return visited.contains(to);
     }
 
     @Override
