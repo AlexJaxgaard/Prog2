@@ -1,4 +1,3 @@
-import java.io.Console;
 import java.io.Serializable;
 import java.util.*;
 import java.util.Map.Entry;
@@ -45,6 +44,25 @@ public class ListGraph<T> implements Graph<T>, Serializable {
 
     @Override
     public void setConnectionWeight(T node1, T node2, int weight) {
+        Iterator it;
+        if (weight < 0){
+            throw new IllegalArgumentException();
+        }
+        if (!nodes.containsKey(node1) || !nodes.containsKey(node2)) {
+            throw new NoSuchElementException();
+        }
+
+        for (Entry<T, Set<Edge<T>>> entry : nodes.entrySet()){
+            if (entry.getKey().equals(node1)){
+                it = entry.getValue().iterator();
+                while (it.hasNext()){
+                    if (it.next().equals(node2)){
+                        it.next().setWeight();
+                    }
+                }
+            }
+        }
+
 
     }
 
@@ -159,8 +177,43 @@ public class ListGraph<T> implements Graph<T>, Serializable {
 
     @Override
     public List<Edge<T>> getPath(T from, T to) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'getPath'");
+        Map<T, T> connections = new HashMap<>();
+        connections.put(from, null);
+
+        LinkedList<T> queue = new LinkedList<>();
+        queue.add(from);
+        while (!queue.isEmpty()) {
+            T node = queue.pollFirst();
+            for (Edge<T> edge : getEdgesFrom(node)) {
+                T destination = edge.getDestination();
+                if (!connections.containsKey(destination)) {
+                    connections.put(destination, node);
+                    queue.add(destination);
+                }
+            }
+        }
+
+        if (!connections.containsKey(to)) {
+            return null;
+        }
+
+        return gatherPath(from, to, connections);
+
+
     }
+
+    private List<Edge<T>> gatherPath(T from, T to, Map<T, T> connection) {
+        LinkedList<Edge<T>> path = new LinkedList<>();
+        T current = to;
+        while (!current.equals(from)) {
+            T next = connection.get(current);
+            Edge edge = getEdgeBetween(next, current);
+            path.addFirst(edge);
+            current = next;
+        }
+        return Collections.unmodifiableList(path);
+    }
+
+
 
 }
