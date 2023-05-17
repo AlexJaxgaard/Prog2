@@ -1,4 +1,5 @@
 import javafx.application.Application;
+import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.scene.control.Menu;
 import javafx.scene.control.MenuBar;
@@ -25,9 +26,7 @@ public class PathFinder<T> extends Application {
         MenuItem menuItem4 = new MenuItem("Save image");
         MenuItem menuItem5 = new MenuItem("Exit");
 
-        menuItem1.setOnAction(actionEvent -> {
-
-        });
+        menuItem1.setOnAction(openFileHandler);
 
 
         MenuBar menuBar = new MenuBar();
@@ -35,8 +34,12 @@ public class PathFinder<T> extends Application {
 
     }
 
-    public class openFileHandler implements EventHandler{
+    public static class openFileHandler implements EventHandler<ActionEvent> {
 
+        @Override
+        public void handle(ActionEvent actionEvent) {
+
+        }
     }
 
 
