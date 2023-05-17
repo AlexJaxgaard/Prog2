@@ -5,6 +5,7 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="1bc40c2a-6006-4abf-91d4-0d29b9f47e29" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/.idea/Prog2.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/Prog2.iml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -25,18 +26,22 @@
   </component>
   <component name="PropertiesComponent"><![CDATA[{
   "keyToString": {
+    "Downloaded.Files.Path.Enabled": "true",
+    "Repository.Attach.Annotations": "false",
+    "Repository.Attach.JavaDocs": "false",
+    "Repository.Attach.Sources": "false",
     "RunOnceActivity.ShowReadmeOnStart": "true",
     "git-widget-placeholder": "main",
-    "project.structure.last.edited": "Libraries",
+    "project.structure.last.edited": "Problems",
     "project.structure.proportion": "0.0",
-    "project.structure.side.proportion": "0.0"
+    "project.structure.side.proportion": "0.2"
   }
 }]]></component>
   <component name="RunManager">
     <configuration name="PathFinder" type="Application" factoryName="Application">
       <option name="MAIN_CLASS_NAME" value="PathFinder" />
       <module name="Prog2" />
-      <option name="VM_PARAMETERS" value="--module-path &quot;D:\openjfx-20.0.1_windows-x64_bin-sdk\javafx-sdk-20.0.1\lib&quot; --add-modules=javafx.controls,javafx.fxml" />
+      <option name="VM_PARAMETERS" value="--module-path &quot;javafx-sdk-20.0.1\lib&quot; --add-modules=javafx.controls,javafx.fxml" />
       <method v="2">
         <option name="Make" enabled="true" />
       </method>
