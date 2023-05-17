@@ -32,7 +32,7 @@ public class PathFinder<T> extends Application {
             @Override
             public void handle(ActionEvent actionEvent) {
                 javafx.scene.image.Image image = new javafx.scene.image.Image(
-                        "file:C:\\Users\\snale\\Documents\\GitHub\\Prog2\\Prog2\\src\\europa.gif");
+                        "europa.gif");
                 ImageView imageView = new ImageView(image);
                 root.setCenter(imageView);
             }
