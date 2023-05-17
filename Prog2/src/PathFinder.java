@@ -35,7 +35,9 @@ public class PathFinder<T> extends Application {
 
     }
 
-    public class openFileHandler implements EventHandler
+    public class openFileHandler implements EventHandler{
+
+    }
 
 
     public static void main(String[] args) {
