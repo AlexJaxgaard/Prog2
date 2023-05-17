@@ -4,16 +4,14 @@ import javafx.event.EventHandler;
 import javafx.geometry.Point2D;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
-import javafx.scene.control.Button;
-import javafx.scene.control.Menu;
-import javafx.scene.control.MenuBar;
-import javafx.scene.control.MenuItem;
+import javafx.scene.control.*;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.VBox;
+import javafx.scene.shape.Circle;
 import javafx.stage.Stage;
 
 import java.io.File;
@@ -25,7 +23,8 @@ import java.util.Scanner;
 import static java.lang.Double.parseDouble;
 
 public class PathFinder<T> extends Application {
-
+    private boolean mapOpen = false;
+    private boolean mapChanged = false;
     private Map<T, Point2D> positions = new HashMap();
     private BorderPane root = new BorderPane();
     private Pane center = new Pane();
@@ -44,6 +43,8 @@ public class PathFinder<T> extends Application {
         Menu menu = new Menu("File");
         MenuItem newMap = new MenuItem("New Map");
         MenuItem open = new MenuItem("Open");
+
+
         MenuItem save = new MenuItem("Save");
         MenuItem saveImage = new MenuItem("Save image");
         MenuItem exit = new MenuItem("Exit");
@@ -76,19 +77,32 @@ public class PathFinder<T> extends Application {
             @Override
             public void handle(ActionEvent actionEvent) {
 
+                if (mapChanged) {
+                    Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+
+
+                }
+
                 javafx.scene.image.Image image = new javafx.scene.image.Image("europa.gif");
                 ImageView imageView = new ImageView(image);
 
 
                 center.getChildren().addAll(imageView);
                 root.setCenter(center);
+                mapOpen = true;
 
             }
         });
 
-        open.setOnAction(new EventHandler<ActionEvent>() {
+        class OpenFileHandler implements EventHandler<ActionEvent> {
             @Override
             public void handle(ActionEvent actionEvent) {
+
+                if (!mapOpen) {
+                    System.out.println("Map doesn't exist, will not add nodes");
+                    return;
+                }
+
                 File file = new File("C:\\Users\\snale\\Documents\\GitHub\\Prog2\\Prog2\\src\\europa.graph");
                 Scanner sc = null;
                 try {
@@ -110,35 +124,20 @@ public class PathFinder<T> extends Application {
                     positions.put((T) current, point);
                 }
 
+
                 System.out.println(positions);
-
-                //HashMap<String, Set<Edge<T>>> tempMap = new HashMap<>();
-
-                /*for (int i = 2; i <= 2; i++) {
-                    sc.nextLine();
-                    while (sc.hasNext()) {
-                        sc.useDelimiter(";");
-
-                        String current = sc.next();
-
-                        double xValue = parseDouble(sc.next());
-                        double yValue = parseDouble(sc.next());
-                        System.out.println(current);
-                        System.out.println(xValue);
-                        System.out.println(yValue);
-                        Point2D point = new Point2D(xValue, yValue);
-                        positions.put((T) current, point);
-
-
-                    }
-                }*/
+                //Adds points
+                for (T point : positions.keySet()) {
+                    Circle circle = new Circle(positions.get(point).getX(), positions.get(point).getY(), 10);
+                    center.getChildren().add(circle);
+                }
 
 
             }
 
 
-        });
-
+        }
+        open.setOnAction(new OpenFileHandler());
 
         root.setTop(topVBox);
 
