@@ -17,10 +17,9 @@ import javafx.stage.Stage;
 
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Scanner;
+import java.io.IOException;
+import java.util.*;
+import java.io.FileWriter;
 
 import static java.lang.Double.parseDouble;
 
@@ -198,6 +197,52 @@ public class PathFinder<T> extends Application {
 
         }
         open.setOnAction(new OpenFileHandler());
+
+        class saveFileHanler implements EventHandler<ActionEvent> {
+
+            @Override
+            public void handle(ActionEvent actionEvent) {
+                String file = "file:europa.graph";
+                String cityAndPositions = "";
+                String nodesAndDetails = "";
+                for (Map.Entry<T, Point2D> entry : positions.entrySet()) {
+                    cityAndPositions += entry.getKey() + ";";
+                    cityAndPositions += entry.getValue().getX() + ";" + entry.getValue().getY();
+
+                }
+
+                for (T node : graph.getNodes()) {
+
+                    for (Edge<T> edge : graph.getEdgesFrom(node)) {
+                        nodesAndDetails += node + ";" + edge.getDestination() + ";" + edge.getName() + ";" + edge.getWeight() + "\n";
+
+                    }
+
+                }
+                
+                String toWrite = file + "\n" + cityAndPositions + "\n" + nodesAndDetails;
+
+                FileWriter myWriter = null;
+                try {
+                    myWriter = new FileWriter("C:\\Users\\snale\\Documents\\GitHub\\Prog2\\Prog2\\europea.graph");
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+                try {
+                    myWriter.write(toWrite);
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+                try {
+                    myWriter.close();
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+
+            }
+        }
+        save.setOnAction(new saveFileHanler());
+
 
         root.setTop(topVBox);
 
