@@ -12,12 +12,14 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.VBox;
 import javafx.scene.shape.Circle;
+import javafx.scene.shape.Line;
 import javafx.stage.Stage;
 
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Scanner;
 
 import static java.lang.Double.parseDouble;
@@ -73,7 +75,7 @@ public class PathFinder<T> extends Application {
         topVBox.getChildren().addAll(menuBar, choiceBar);
 
 
-        newMap.setOnAction(new EventHandler<ActionEvent>() {
+        class newMapHandler implements EventHandler<ActionEvent> {
             @Override
             public void handle(ActionEvent actionEvent) {
 
@@ -91,16 +93,32 @@ public class PathFinder<T> extends Application {
                 root.setCenter(center);
                 mapOpen = true;
 
-            }
-        });
 
+            }
+        }
+        newMap.setOnAction(new newMapHandler());
         class OpenFileHandler implements EventHandler<ActionEvent> {
+
             @Override
             public void handle(ActionEvent actionEvent) {
 
                 if (!mapOpen) {
-                    System.out.println("Map doesn't exist, will not add nodes");
-                    return;
+
+                    new newMapHandler().handle(new ActionEvent());
+
+
+                }
+                if (mapChanged || mapOpen) {
+                    Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+                    alert.setTitle("Map already exists");
+                    alert.setHeaderText("You already have a map open, if you choose to continue, any unsaved progress will be overwritten.");
+                    alert.setContentText("Are you sure you want to continue?");
+
+                    Optional<ButtonType> result = alert.showAndWait();
+
+                    if (result.get() != ButtonType.OK) {
+                        return;
+                    }
                 }
 
                 File file = new File("C:\\Users\\snale\\Documents\\GitHub\\Prog2\\Prog2\\src\\europa.graph");
@@ -130,6 +148,48 @@ public class PathFinder<T> extends Application {
                 for (T point : positions.keySet()) {
                     Circle circle = new Circle(positions.get(point).getX(), positions.get(point).getY(), 10);
                     center.getChildren().add(circle);
+                    graph.add(point);
+
+                }
+                System.out.println(graph.getNodes());
+
+                //Add connections
+
+
+                Scanner newScanner = null;
+                try {
+                    newScanner = new Scanner(file);
+                } catch (FileNotFoundException e) {
+                    throw new RuntimeException(e);
+                }
+                newScanner.useDelimiter(";|\\r\\n");
+                newScanner.nextLine();
+                newScanner.nextLine();
+
+
+                while (newScanner.hasNextLine()) {
+
+
+                    if (!newScanner.hasNext()) {
+                        return;
+                    }
+                    String node = newScanner.next();
+
+                    System.out.println("node: " + node);
+                    String destination = newScanner.next();
+                    System.out.println("destination: " + destination);
+                    String name = newScanner.next();
+                    System.out.println("name: " + name);
+                    int weight = Integer.parseInt((newScanner.next()));
+                    System.out.println("weight: " + weight);
+
+                    if (!graph.pathExists((T) node, (T) destination)) {
+                        graph.connect((T) node, (T) destination, name, weight);
+
+                    }
+                    drawLines(getPosition(node), getPosition(destination));
+                    System.out.println("Drew lines");
+
                 }
 
 
@@ -146,6 +206,24 @@ public class PathFinder<T> extends Application {
         primaryStage.show();
         primaryStage.setMinHeight(new Image("europa.gif").getHeight() + topVBox.getHeight());
 
+
+    }
+
+
+    private Point2D getPosition(String name) {
+        for (Map.Entry<T, Point2D> entry : positions.entrySet()) {
+            if (entry.getKey().equals(name)) {
+                return entry.getValue();
+            }
+        }
+        return null;
+
+
+    }
+
+    private void drawLines(Point2D from, Point2D to) {
+        Line line = new Line(from.getX(), from.getY(), to.getX(), to.getY());
+        center.getChildren().add(line);
 
     }
 
