@@ -1,12 +1,12 @@
 file:europa.graph
-Oslo;398.0;220.0Warszawa;501.0;377.0Amsterdam;309.0;350.0Berlin;411.0;368.0Madrid;139.0;555.0London;245.0;360.0Dublin;181.0;306.0Stockholm;470.0;242.0Paris;264.0;416.0Lisabon;50.0;558.0
+Oslo;398.0;220.0Warszawa;501.0;377.0Amsterdam;309.0;350.0aaaaa;437.0;201.0Berlin;411.0;368.0Madrid;139.0;555.0London;245.0;360.0Dublin;181.0;306.0Stockholm;470.0;242.0Paris;264.0;416.0Lisabon;50.0;558.0
 Oslo;Berlin;Airplane;2
 Warszawa;Berlin;Train;6
 Amsterdam;Paris;Train;4
-Berlin;Stockholm;Airplane;3
-Berlin;Paris;Train;10
-Berlin;Warszawa;Train;6
 Berlin;Oslo;Airplane;2
+Berlin;Stockholm;Airplane;3
+Berlin;Warszawa;Train;6
+Berlin;Paris;Train;10
 Madrid;Paris;Train;10
 Madrid;Lisabon;Train;3
 London;Dublin;Boat;15
@@ -14,7 +14,7 @@ London;Paris;Train;2
 Dublin;London;Boat;15
 Stockholm;Berlin;Airplane;3
 Paris;Berlin;Train;10
-Paris;Amsterdam;Train;4
 Paris;London;Train;2
+Paris;Amsterdam;Train;4
 Paris;Madrid;Train;10
 Lisabon;Madrid;Train;3

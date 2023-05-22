@@ -1,12 +1,17 @@
 import javafx.application.Application;
+import javafx.embed.swing.SwingFXUtils;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.geometry.Point2D;
 import javafx.geometry.Pos;
+import javafx.scene.Cursor;
 import javafx.scene.Scene;
+import javafx.scene.SnapshotParameters;
 import javafx.scene.control.*;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
+import javafx.scene.image.WritableImage;
+import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
@@ -14,12 +19,17 @@ import javafx.scene.layout.VBox;
 import javafx.scene.shape.Circle;
 import javafx.scene.shape.Line;
 import javafx.stage.Stage;
+import javafx.stage.WindowEvent;
 
+import javax.imageio.ImageIO;
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.util.*;
 import java.io.FileWriter;
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Scanner;
 
 import static java.lang.Double.parseDouble;
 
@@ -52,7 +62,7 @@ public class PathFinder<T> extends Application {
 
 
         HBox choiceBar = new HBox();
-        menu.getItems().addAll(newMap, open, save, saveImage);
+        menu.getItems().addAll(newMap, open, save, saveImage, exit);
         MenuBar menuBar = new MenuBar();
         menuBar.getMenus().add(menu);
 
@@ -198,17 +208,25 @@ public class PathFinder<T> extends Application {
         }
         open.setOnAction(new OpenFileHandler());
 
-        class saveFileHanler implements EventHandler<ActionEvent> {
+        class saveFileHandler implements EventHandler<ActionEvent> {
 
             @Override
             public void handle(ActionEvent actionEvent) {
                 String file = "file:europa.graph";
                 String cityAndPositions = "";
                 String nodesAndDetails = "";
+                int counter = 0;
                 for (Map.Entry<T, Point2D> entry : positions.entrySet()) {
+
+                    if (counter >= 1) {
+                        cityAndPositions += ";";
+
+                    }
                     cityAndPositions += entry.getKey() + ";";
                     cityAndPositions += entry.getValue().getX() + ";" + entry.getValue().getY();
+                    counter++;
 
+                    System.out.println(cityAndPositions);
                 }
 
                 for (T node : graph.getNodes()) {
@@ -219,12 +237,12 @@ public class PathFinder<T> extends Application {
                     }
 
                 }
-                
+
                 String toWrite = file + "\n" + cityAndPositions + "\n" + nodesAndDetails;
 
                 FileWriter myWriter = null;
                 try {
-                    myWriter = new FileWriter("C:\\Users\\snale\\Documents\\GitHub\\Prog2\\Prog2\\europea.graph");
+                    myWriter = new FileWriter("C:\\Users\\snale\\Documents\\GitHub\\Prog2\\Prog2\\src\\europa.graph");
                 } catch (IOException e) {
                     throw new RuntimeException(e);
                 }
@@ -241,8 +259,102 @@ public class PathFinder<T> extends Application {
 
             }
         }
-        save.setOnAction(new saveFileHanler());
+        save.setOnAction(new saveFileHandler());
 
+
+        class saveImageHandler implements EventHandler<ActionEvent> {
+
+            @Override
+            public void handle(ActionEvent actionEvent) {
+
+                WritableImage image = center.snapshot(new SnapshotParameters(), null);
+
+
+                File file = new File("./src/capture.png");
+
+                try {
+                    ImageIO.write(SwingFXUtils.fromFXImage(image, null), "png", file);
+                } catch (IOException e) {
+                    System.out.println("Fel när filen skulle skapas");
+                }
+            }
+
+        }
+        saveImage.setOnAction(new saveImageHandler());
+
+
+        class exitProgramHandler implements EventHandler<ActionEvent> {
+
+            @Override
+            public void handle(ActionEvent actionEvent) {
+                stop();
+
+            }
+
+
+        }
+
+        primaryStage.setOnCloseRequest(new EventHandler<WindowEvent>() {
+            public void handle(WindowEvent windowEvent) {
+                if (mapChanged || mapOpen) {
+                    Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+                    alert.setTitle("");
+                    alert.setHeaderText("Unsaved changes, exit anyway?");
+                    alert.setContentText("");
+
+                    Optional<ButtonType> result = alert.showAndWait();
+
+                    if (result.get() != ButtonType.OK) {
+                        return;
+                    }
+
+
+                }
+
+            }
+        });
+        exit.setOnAction(new exitProgramHandler());
+
+        class mouseClickedOnMap implements EventHandler<MouseEvent> {
+
+            @Override
+            public void handle(MouseEvent mouseEvent) {
+                double xValue = mouseEvent.getX();
+                double yValue = mouseEvent.getY();
+                TextInputDialog td = new TextInputDialog("");
+
+                td.setHeaderText("Enter name of place:");
+                td.setTitle("New place");
+
+
+                td.showAndWait();
+                String nameOfPlace = td.getResult();
+                System.out.println(nameOfPlace);
+                graph.add((T) nameOfPlace);
+
+                positions.put((T) nameOfPlace, new Point2D(xValue, yValue));
+                Circle circle = new Circle(positions.get((T) nameOfPlace).getX(), positions.get((T) nameOfPlace).getY(), 10);
+                center.getChildren().add(circle);
+                center.setCursor(Cursor.DEFAULT);
+                newPlace.setDisable(false);
+
+            }
+        }
+
+        class newPlaceHandler implements EventHandler<ActionEvent> {
+
+            @Override
+            public void handle(ActionEvent actionEvent) {
+
+                newPlace.setDisable(true);
+                center.setCursor(Cursor.CROSSHAIR);
+                center.setOnMouseClicked(new mouseClickedOnMap());
+                center.setOnMouseClicked();
+
+
+            }
+        }
+        newPlace.setOnAction(new newPlaceHandler());
 
         root.setTop(topVBox);
 
@@ -263,6 +375,12 @@ public class PathFinder<T> extends Application {
         }
         return null;
 
+
+    }
+
+    @Override
+    public void stop() {
+        return;
 
     }
 
