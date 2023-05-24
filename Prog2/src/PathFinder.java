@@ -6,7 +6,6 @@ import javafx.event.EventHandler;
 import javafx.geometry.Point2D;
 import javafx.geometry.Pos;
 import javafx.scene.Cursor;
-import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.SnapshotParameters;
 import javafx.scene.control.*;
@@ -28,30 +27,25 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Scanner;
+import java.util.*;
+import java.util.regex.Pattern;
 
 import static java.lang.Double.parseDouble;
 
 public class PathFinder<T> extends Application {
+
+    private boolean changesMade = false;
+
     private boolean mapOpen = false;
-    private boolean mapChanged = false;
-
-    private boolean changesSaved = false;
-    private Map<T, Point2D> positions = new HashMap();
-
-    private Map<T, Circle> circles = new HashMap();
+    private boolean stateSaved = false;
+    private Map<T, Circle> positions = new HashMap();
     private BorderPane root = new BorderPane();
     private Pane center = new Pane();
 
-    ListGraph<NodeOnMap> graph;
+    ListGraph<T> graph;
 
     @Override
     public void start(Stage primaryStage) {
-
-
         graph = new ListGraph<>();
         primaryStage.setTitle("PathFinder");
         root = new BorderPane();
@@ -91,25 +85,44 @@ public class PathFinder<T> extends Application {
         choiceBar.setAlignment(Pos.CENTER);
         topVBox.getChildren().addAll(menuBar, choiceBar);
 
+        class ClearMapHandler implements EventHandler<ActionEvent> {
 
+            @Override
+            public void handle(ActionEvent actionEvent) {
+                positions.clear();
+                Set<T> setOfNodes = graph.getNodes();
+
+                for (T node : setOfNodes) {
+                    graph.remove(node);
+                }
+
+
+                center.getChildren().clear();
+                root.setCenter(null);
+            }
+        }
         class newMapHandler implements EventHandler<ActionEvent> {
             @Override
             public void handle(ActionEvent actionEvent) {
+                center.getChildren().clear();
 
-                if (mapChanged) {
+                if (changesMade && !stateSaved) {
                     Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
 
 
                 }
-
+                if (mapOpen) {
+                    new ClearMapHandler().handle(new ActionEvent());
+                }
                 javafx.scene.image.Image image = new javafx.scene.image.Image("europa.gif");
                 ImageView imageView = new ImageView(image);
 
 
                 center.getChildren().addAll(imageView);
                 root.setCenter(center);
+                stateSaved = true;
+                changesMade = false;
                 mapOpen = true;
-
 
             }
         }
@@ -119,34 +132,37 @@ public class PathFinder<T> extends Application {
             @Override
             public void handle(ActionEvent actionEvent) {
 
-                if (!mapOpen) {
 
-                    new newMapHandler().handle(new ActionEvent());
-
-
-                }
-                if (mapChanged || mapOpen) {
+                if (changesMade && !stateSaved) {
                     Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
-                    alert.setTitle("Map already exists");
-                    alert.setHeaderText("You already have a map open, if you choose to continue, any unsaved progress will be overwritten.");
+                    alert.setTitle("");
+                    alert.setHeaderText("You have unsaved changes, if you choose to continue, any unsaved progress will be overwritten.");
                     alert.setContentText("Are you sure you want to continue?");
 
                     Optional<ButtonType> result = alert.showAndWait();
 
                     if (result.get() != ButtonType.OK) {
                         return;
+                    } else {
+                        new ClearMapHandler().handle(new ActionEvent());
+                        new newMapHandler().handle(new ActionEvent());
+
                     }
                 }
+
+                new newMapHandler().handle(new ActionEvent());
+
 
                 File file = new File("C:\\Users\\snale\\Documents\\GitHub\\Prog2\\Prog2\\src\\europa.graph");
                 Scanner sc = null;
                 try {
                     sc = new Scanner(file);
                 } catch (FileNotFoundException e) {
-                    throw new RuntimeException(e);
+                    Alert alert = new Alert(Alert.AlertType.ERROR);
+                    alert.show();
                 }
-                sc.nextLine();
 
+                sc.nextLine();
                 String line = sc.nextLine();
 
                 String[] lineSplit = line.split(";");
@@ -155,59 +171,61 @@ public class PathFinder<T> extends Application {
                     String current = lineSplit[i];
                     double xValue = parseDouble(lineSplit[i + 1]);
                     double yValue = parseDouble(lineSplit[i + 2]);
-                    NodeOnMap node = new NodeOnMap(current, xValue, yValue);
-                    center.getChildren().add(node);
-                    graph.add(node);
-
-
+                    Point2D point = new Point2D(xValue, yValue);
+                    positions.put((T) current, new Circle(xValue, yValue, 10));
                 }
 
 
+                System.out.println(positions);
+                //Adds points
+                for (T point : positions.keySet()) {
+                    center.getChildren().add((positions.get(point)));
+                    //Circle circle = new Circle(positions.get(point).getX(), positions.get(point).getY(), 10);
+                    graph.add(point);
+
+                }
                 System.out.println(graph.getNodes());
 
                 //Add connections
 
-                sc.close();
+
                 Scanner newScanner = null;
                 try {
                     newScanner = new Scanner(file);
                 } catch (FileNotFoundException e) {
                     throw new RuntimeException(e);
                 }
-                newScanner.useDelimiter(";|\\r\\n");
+
                 newScanner.nextLine();
                 newScanner.nextLine();
 
-
+                newScanner.useDelimiter(Pattern.compile("(\\n)|;"));
                 while (newScanner.hasNextLine()) {
-                    String lineToCheck = newScanner.nextLine();
-                    String[] values = lineToCheck.split(";");
 
-                    if (values.length < 4) {
-                        // Handle invalid line here
-                        continue;
+
+                    if (!newScanner.hasNext()) {
+                        return;
                     }
-
-                    String node = values[0].trim();
+                    String node = newScanner.next();
                     System.out.println("node: " + node);
 
-                    String destination = values[1].trim();
+                    String destination = newScanner.next();
                     System.out.println("destination: " + destination);
 
-                    String name = values[2].trim();
+                    String name = newScanner.next();
                     System.out.println("name: " + name);
 
-                    int weight = Integer.parseInt(values[3].trim());
-                    System.out.println("weight: " + weight);
-                    NodeOnMap start = new NodeOnMap(node, positions.get((T) node).getX(), positions.get((T) node).getY());
-                    NodeOnMap finish = new NodeOnMap(destination, positions.get((T) destination).getX(), positions.get((T) destination).getY());
-                    if (!graph.pathExists(start, finish)) {
-                        graph.connect(start, finish, name, weight);
+                    String weight = (newScanner.next());
+                    int newWeight = Integer.parseInt(weight);
+                    System.out.println("weight: " + newWeight);
+
+                    if (!graph.pathExists((T) node, (T) destination)) {
+                        graph.connect((T) node, (T) destination, name, newWeight);
 
                     }
                     drawLines(getPosition(node), getPosition(destination));
                     System.out.println("Drew lines");
-
+                    System.out.println(graph.getNodes());
                 }
 
 
@@ -217,33 +235,32 @@ public class PathFinder<T> extends Application {
         }
         open.setOnAction(new OpenFileHandler());
 
-        class saveFileHandler implements EventHandler<ActionEvent> {
 
+        class saveFileHandler implements EventHandler<ActionEvent> {
 
             @Override
             public void handle(ActionEvent actionEvent) {
-                mapChanged = false;
-                changesSaved = true;
                 String file = "file:europa.graph";
                 String cityAndPositions = "";
                 String nodesAndDetails = "";
                 int counter = 0;
-                for (Map.Entry<T, Point2D> entry : positions.entrySet()) {
+
+                for (Map.Entry<T, Circle> entry : positions.entrySet()) {
 
                     if (counter >= 1) {
                         cityAndPositions += ";";
 
                     }
                     cityAndPositions += entry.getKey() + ";";
-                    cityAndPositions += entry.getValue().getX() + ";" + entry.getValue().getY();
+                    cityAndPositions += entry.getValue().getCenterX() + ";" + entry.getValue().getCenterY();
                     counter++;
 
                     System.out.println(cityAndPositions);
                 }
 
-                for (NodeOnMap node : graph.getNodes()) {
+                for (T node : graph.getNodes()) {
 
-                    for (Edge<NodeOnMap> edge : graph.getEdgesFrom(node)) {
+                    for (Edge<T> edge : graph.getEdgesFrom(node)) {
                         nodesAndDetails += node + ";" + edge.getDestination() + ";" + edge.getName() + ";" + edge.getWeight() + "\n";
 
                     }
@@ -269,21 +286,12 @@ public class PathFinder<T> extends Application {
                     throw new RuntimeException(e);
                 }
 
+                changesMade = false;
+                stateSaved = true;
+
             }
         }
         save.setOnAction(new saveFileHandler());
-
-        class mapClicked implements EventHandler<MouseEvent> {
-
-            @Override
-            public void handle(MouseEvent mouseEvent) {
-                for (T node : positions.keySet()) {
-                    if (positions.get(node).getX() == mouseEvent.getX() && positions.get(node).getY() == mouseEvent.getY()) {
-                        System.out.println("Match found!" + positions.get(node));
-                    }
-                }
-            }
-        }
 
 
         class saveImageHandler implements EventHandler<ActionEvent> {
@@ -311,53 +319,48 @@ public class PathFinder<T> extends Application {
 
             @Override
             public void handle(ActionEvent actionEvent) {
-                Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+                if (changesMade && !stateSaved) {
+                    Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+                    alert.setTitle("");
+                    alert.setHeaderText("Unsaved changes, exit anyway?");
+                    alert.setContentText("");
 
-                alert.setTitle("Warning!");
-                alert.setContentText("Unsaved changes, continue anyways?");
+                    Optional<ButtonType> result = alert.showAndWait();
 
-
-                if (mapChanged == true && changesSaved == false) {
-                    alert.showAndWait();
-                    if (alert.getResult() == ButtonType.OK) {
+                    if (result.get() != ButtonType.OK) {
+                        actionEvent.consume();
+                    } else {
                         Platform.exit();
-                    } else if (alert.getResult() == ButtonType.CANCEL) {
-                        return;
                     }
-                } else {
-                    Platform.exit();
+
                 }
 
 
             }
-
-
         }
-        exit.setOnAction(new exitProgramHandler());
 
         primaryStage.setOnCloseRequest(new EventHandler<WindowEvent>() {
             public void handle(WindowEvent windowEvent) {
-                Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+                if (changesMade && !stateSaved) {
+                    Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+                    alert.setTitle("");
+                    alert.setHeaderText("Unsaved changes, exit anyway?");
+                    alert.setContentText("");
 
-                alert.setTitle("Warning!");
-                alert.setContentText("Unsaved changes, continue anyways?");
+                    Optional<ButtonType> result = alert.showAndWait();
 
-
-                if (mapChanged && !changesSaved) {
-                    alert.showAndWait();
-                    if (alert.getResult() == ButtonType.OK) {
-                        Platform.exit();
-                    } else if (alert.getResult() == ButtonType.CANCEL) {
+                    if (result.get() != ButtonType.OK) {
                         windowEvent.consume();
+                    } else {
+                        Platform.exit();
                     }
+
+
                 }
 
-
             }
-
-
         });
-
+        exit.setOnAction(new exitProgramHandler());
 
         class mouseClickedOnMap implements EventHandler<MouseEvent> {
 
@@ -372,29 +375,29 @@ public class PathFinder<T> extends Application {
 
 
                 td.showAndWait();
-                if (td.getResult() == (null) || td.getResult().isEmpty()) {
+                newPlace.setDisable(false);
+                center.setOnMouseClicked(null);
+                if (td.getResult().isEmpty() || td.getResult().equals("") || td.equals(null)) {
+
                     return;
-                } else {
-                    String nameOfPlace = td.getResult();
-
-
-                    System.out.println(nameOfPlace);
-
-                    graph.add(new NodeOnMap(nameOfPlace, xValue, yValue));
-
-                    positions.put((T) nameOfPlace, new Point2D(xValue, yValue));
-                    drawCircles((T) nameOfPlace);
-
-                    center.setCursor(Cursor.DEFAULT);
-                    newPlace.setDisable(false);
-                    mapChanged = true;
-                    changesSaved = false;
                 }
 
-                center.setOnMouseClicked(null);
+
+                String nameOfPlace = td.getResult();
+                System.out.println(nameOfPlace);
+                graph.add((T) nameOfPlace);
+
+
+                Circle circle = new Circle(xValue, yValue, 10);
+                positions.put((T) nameOfPlace, circle);
+                center.getChildren().add(circle);
+                center.setCursor(Cursor.DEFAULT);
+
+                changesMade = true;
+                stateSaved = false;
+
             }
         }
-
 
         class newPlaceHandler implements EventHandler<ActionEvent> {
 
@@ -406,24 +409,9 @@ public class PathFinder<T> extends Application {
                 center.setOnMouseClicked(new mouseClickedOnMap());
 
 
-                //center.setOnMouseClicked();
-
-
             }
         }
         newPlace.setOnAction(new newPlaceHandler());
-
-        class newConnectionHandler implements EventHandler<ActionEvent> {
-
-
-            @Override
-            public void handle(ActionEvent actionEvent) {
-
-            }
-        }
-
-        newConnection.setOnAction(new newConnectionHandler());
-
 
         root.setTop(topVBox);
 
@@ -437,9 +425,9 @@ public class PathFinder<T> extends Application {
 
 
     private Point2D getPosition(String name) {
-        for (Map.Entry<T, Point2D> entry : positions.entrySet()) {
+        for (Map.Entry<T, Circle> entry : positions.entrySet()) {
             if (entry.getKey().equals(name)) {
-                return entry.getValue();
+                return new Point2D(entry.getValue().getCenterX(), entry.getValue().getCenterY());
             }
         }
         return null;
@@ -447,25 +435,10 @@ public class PathFinder<T> extends Application {
 
     }
 
+    public void drawCircles(Circle circle) {
 
-    class circlePressedHandler implements EventHandler<MouseEvent> {
-
-        int nodesPressed = 0;
-
-        @Override
-        public void handle(MouseEvent mouseEvent) {
-            for (Node node : center.getChildren()) {
-                if (node.isPressed()) {
-                    System.out.println("node pressed");
-                    nodesPressed++;
-                    if (nodesPressed >= 2) {
-
-                    }
-                }
-            }
-
-        }
     }
+
 
     private void drawLines(Point2D from, Point2D to) {
         Line line = new Line(from.getX(), from.getY(), to.getX(), to.getY());
@@ -473,18 +446,12 @@ public class PathFinder<T> extends Application {
 
     }
 
-    private void drawCircles(T point) {
-        Circle circle = new Circle(positions.get(point).getX(), positions.get(point).getY(), 10);
+    public static class openFileHandler implements EventHandler<ActionEvent> {
 
-        circle.setOnMouseClicked(new circlePressedHandler());
-        Button button = new Button();
-        center.getChildren().add(circle);
+        @Override
+        public void handle(ActionEvent actionEvent) {
 
-        NodeOnMap nodeOnMap = new NodeOnMap(point.toString(), positions.get(point).getX(), positions.get(point).getY());
-
-        graph.add(nodeOnMap);
-        circles.put(point, circle);
-
+        }
     }
 
 
