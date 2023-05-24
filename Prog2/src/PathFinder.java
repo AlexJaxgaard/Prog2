@@ -30,8 +30,12 @@ import java.util.regex.Pattern;
 
 import static java.lang.Double.parseDouble;
 
+// PROG2 VT2023, Inlämningsuppgift, del 2
+// Grupp 112
+// Alexander Jaxgård alja9460
+// Emil Calmels emca3600
 public class PathFinder<T> extends Application {
-
+    private String imagePath = "europa.gif";
     private boolean changesMade = false;
 
     private boolean mapOpen = false;
@@ -50,7 +54,7 @@ public class PathFinder<T> extends Application {
         root = new BorderPane();
         center = new Pane();
         root.setCenter(center);
-        Scene scene = new Scene(root, new Image("europa.gif").getWidth(), 785);
+        Scene scene = new Scene(root, new Image(imagePath).getWidth(), 785);
 
         Menu menu = new Menu("File");
         MenuItem newMap = new MenuItem("New Map");
@@ -74,6 +78,12 @@ public class PathFinder<T> extends Application {
         Button newConnection = new Button("New Connection");
         Button changeConncetion = new Button("Change Connection");
 
+        findPath.setDisable(true);
+        showConnection.setDisable(true);
+        newPlace.setDisable(true);
+        newConnection.setDisable(true);
+        changeConncetion.setDisable(true);
+
         choiceBar.getChildren().addAll(findPath, showConnection, newPlace, newConnection, changeConncetion);
         choiceBar.setSpacing(10);
 
@@ -83,6 +93,21 @@ public class PathFinder<T> extends Application {
 
         choiceBar.setAlignment(Pos.CENTER);
         topVBox.getChildren().addAll(menuBar, choiceBar);
+
+        menuBar.setId("menu");
+        menu.setId("menuFile");
+        newMap.setId("menuNewMap");
+        open.setId("menuOpenFile");
+        save.setId("menuSaveFile");
+        saveImage.setId("menuSaveImage");
+        exit.setId("menuExit");
+        findPath.setId("btnFindPath");
+        showConnection.setId("btnShowConnection");
+        newPlace.setId("btnNewPlace");
+        changeConncetion.setId("btnChangeConnection");
+        newConnection.setId("btnNewConnection");
+        center.setId("outputArea");
+
 
         class ClearMapHandler implements EventHandler<ActionEvent> {
 
@@ -100,7 +125,7 @@ public class PathFinder<T> extends Application {
                 root.setCenter(null);
             }
         }
-        class newMapHandler implements EventHandler<ActionEvent> {
+        class NewMapHandler implements EventHandler<ActionEvent> {
             @Override
             public void handle(ActionEvent actionEvent) {
                 center.getChildren().clear();
@@ -113,8 +138,13 @@ public class PathFinder<T> extends Application {
                 if (mapOpen) {
                     new ClearMapHandler().handle(new ActionEvent());
                 }
-                javafx.scene.image.Image image = new javafx.scene.image.Image("europa.gif");
+                Image image = new Image(imagePath);
                 ImageView imageView = new ImageView(image);
+                findPath.setDisable(false);
+                showConnection.setDisable(false);
+                newPlace.setDisable(false);
+                newConnection.setDisable(false);
+                changeConncetion.setDisable(false);
 
 
                 center.getChildren().addAll(imageView);
@@ -125,9 +155,9 @@ public class PathFinder<T> extends Application {
 
             }
         }
-        newMap.setOnAction(new newMapHandler());
+        newMap.setOnAction(new NewMapHandler());
 
-        class mouseClickedOnCircle implements EventHandler<MouseEvent> {
+        class MouseClickedOnCircle implements EventHandler<MouseEvent> {
 
             @Override
             public void handle(MouseEvent mouseEvent) {
@@ -193,15 +223,15 @@ public class PathFinder<T> extends Application {
                         return;
                     } else {
                         new ClearMapHandler().handle(new ActionEvent());
-                        new newMapHandler().handle(new ActionEvent());
+                        new NewMapHandler().handle(new ActionEvent());
 
                     }
                 }
 
-                new newMapHandler().handle(new ActionEvent());
+                new NewMapHandler().handle(new ActionEvent());
 
 
-                File file = new File("C:\\Users\\snale\\Documents\\GitHub\\Prog2\\Prog2\\src\\europa.graph");
+                File file = new File("europa.graph");
                 Scanner sc = null;
                 try {
                     sc = new Scanner(file);
@@ -221,9 +251,10 @@ public class PathFinder<T> extends Application {
                     double yValue = parseDouble(lineSplit[i + 2]);
                     Circle circle = new Circle(xValue, yValue, 10);
                     circle.setFill(Color.BLUE);
-                    circle.setOnMouseClicked(new mouseClickedOnCircle());
-                    System.out.println("Added click functionality for " + current);
+                    circle.setOnMouseClicked(new MouseClickedOnCircle());
+                    circle.setId(current);
                     positions.put((T) current, circle);
+
                 }
 
 
@@ -233,8 +264,15 @@ public class PathFinder<T> extends Application {
                     center.getChildren().add((positions.get(point)));
                     graph.add(point);
 
+
                 }
                 System.out.println(graph.getNodes());
+
+                for (int i = 0; i < center.getChildren().size(); i++) {
+                    if (center.getChildren().get(i) instanceof Circle) {
+                        center.getChildren().get(i).setViewOrder(-1);
+                    }
+                }
 
                 //Add connections
 
@@ -314,7 +352,7 @@ public class PathFinder<T> extends Application {
                     }
                 }
 
-                if (graph.pathExists(node1, node2)) {
+                if (graph.getEdgeBetween(node1, node2) != null) {
                     Alert alert = new Alert(Alert.AlertType.ERROR);
                     alert.setContentText("Path already exists!");
                     alert.show();
@@ -377,11 +415,20 @@ public class PathFinder<T> extends Application {
         }
         newConnection.setOnAction(new NewConnectionHandler());
 
-        class saveFileHandler implements EventHandler<ActionEvent> {
+        class SaveFileHandler implements EventHandler<ActionEvent> {
 
             @Override
             public void handle(ActionEvent actionEvent) {
-                String file = "file:europa.graph";
+                String path = "europa.graph";
+                FileWriter myWriter = null;
+                try {
+                    myWriter = new FileWriter(path);
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+
+
+                String file = "file:" + imagePath;
                 String cityAndPositions = "";
                 String nodesAndDetails = "";
                 int counter = 0;
@@ -410,12 +457,6 @@ public class PathFinder<T> extends Application {
 
                 String toWrite = file + "\n" + cityAndPositions + "\n" + nodesAndDetails;
 
-                FileWriter myWriter = null;
-                try {
-                    myWriter = new FileWriter("C:\\Users\\snale\\Documents\\GitHub\\Prog2\\Prog2\\src\\europa.graph");
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
-                }
                 try {
                     myWriter.write(toWrite);
                 } catch (IOException e) {
@@ -432,13 +473,21 @@ public class PathFinder<T> extends Application {
 
             }
         }
-        save.setOnAction(new saveFileHandler());
+        save.setOnAction(new SaveFileHandler());
 
 
-        class saveImageHandler implements EventHandler<ActionEvent> {
+        class SaveImageHandler implements EventHandler<ActionEvent> {
 
             @Override
             public void handle(ActionEvent actionEvent) {
+                if (selection[0] != null && selection[1] == null) {
+                    selection[0].setFill(Color.BLUE);
+                } else if (selection[0] == null && selection[1] != null) {
+                    selection[1].setFill(Color.BLUE);
+                } else if (selection[0] != null && selection[1] != null) {
+                    selection[0].setFill(Color.BLUE);
+                    selection[1].setFill(Color.BLUE);
+                }
 
                 WritableImage image = center.snapshot(new SnapshotParameters(), null);
 
@@ -450,13 +499,21 @@ public class PathFinder<T> extends Application {
                 } catch (IOException e) {
                     System.out.println("Fel när filen skulle skapas");
                 }
+                if (selection[0] != null && selection[1] == null) {
+                    selection[0].setFill(Color.RED);
+                } else if (selection[0] == null && selection[1] != null) {
+                    selection[1].setFill(Color.RED);
+                } else if (selection[0] != null && selection[1] != null) {
+                    selection[0].setFill(Color.RED);
+                    selection[1].setFill(Color.RED);
+                }
             }
 
         }
-        saveImage.setOnAction(new saveImageHandler());
+        saveImage.setOnAction(new SaveImageHandler());
 
 
-        class exitProgramHandler implements EventHandler<ActionEvent> {
+        class ExitProgramHandler implements EventHandler<ActionEvent> {
 
             @Override
             public void handle(ActionEvent actionEvent) {
@@ -503,9 +560,9 @@ public class PathFinder<T> extends Application {
 
             }
         });
-        exit.setOnAction(new exitProgramHandler());
+        exit.setOnAction(new ExitProgramHandler());
 
-        class mouseClickedOnMap implements EventHandler<MouseEvent> {
+        class MouseClickedOnMap implements EventHandler<MouseEvent> {
 
             @Override
             public void handle(MouseEvent mouseEvent) {
@@ -521,6 +578,18 @@ public class PathFinder<T> extends Application {
                 newPlace.setDisable(false);
                 center.setOnMouseClicked(null);
                 String nameOfPlace = td.getResult();
+
+                if (nameOfPlace == null || nameOfPlace.isEmpty()) {
+                    return;
+                }
+
+                if (positions.containsKey(nameOfPlace)) {
+                    Alert alert = new Alert(Alert.AlertType.ERROR);
+                    alert.setHeaderText("A place with the same name already exists!");
+                    alert.show();
+                    return;
+                }
+
                 if (!result.isPresent()) {
                     return;
 
@@ -532,10 +601,16 @@ public class PathFinder<T> extends Application {
 
 
                 Circle circle = new Circle(xValue, yValue, 10, Color.BLUE);
-                circle.setOnMouseClicked(new mouseClickedOnCircle());
+                circle.setId(nameOfPlace);
+                circle.setOnMouseClicked(new MouseClickedOnCircle());
                 positions.put((T) nameOfPlace, circle);
                 center.getChildren().add(circle);
 
+                for (int i = 0; i < center.getChildren().size(); i++) {
+                    if (center.getChildren().get(i) instanceof Circle) {
+                        center.getChildren().get(i).setViewOrder(-1);
+                    }
+                }
 
                 changesMade = true;
                 stateSaved = false;
@@ -589,19 +664,20 @@ public class PathFinder<T> extends Application {
         }
         showConnection.setOnAction(new ShowConnectionHandler());
 
-        class newPlaceHandler implements EventHandler<ActionEvent> {
+        class NewPlaceHandler implements EventHandler<ActionEvent> {
 
             @Override
             public void handle(ActionEvent actionEvent) {
 
                 newPlace.setDisable(true);
                 center.setCursor(Cursor.CROSSHAIR);
-                center.setOnMouseClicked(new mouseClickedOnMap());
+                center.setOnMouseClicked(new MouseClickedOnMap());
 
 
             }
         }
-        newPlace.setOnAction(new newPlaceHandler());
+
+        newPlace.setOnAction(new NewPlaceHandler());
         root.setTop(topVBox);
 
         class ChangeConnectionHandler implements EventHandler<ActionEvent> {
@@ -664,11 +740,64 @@ public class PathFinder<T> extends Application {
         }
         changeConncetion.setOnAction(new ChangeConnectionHandler());
 
-        class 
+        class FindPathHandler implements EventHandler<ActionEvent> {
+
+            @Override
+            public void handle(ActionEvent actionEvent) {
+
+
+                int totalTime = 0;
+                T node1 = getName(selection[0]);
+                T node2 = getName(selection[1]);
+                List<Edge<T>> setOfEdges;
+                try {
+                    setOfEdges = graph.getPath(node1, node2);
+                } catch (Exception e) {
+                    Alert alert = new Alert(Alert.AlertType.ERROR);
+
+                    alert.setContentText("Two places must be selected!");
+
+                    alert.show();
+                    return;
+                }
+
+                if (setOfEdges == null) {
+                    Alert alert = new Alert(Alert.AlertType.ERROR);
+
+                    alert.setContentText("No route between " + getName(selection[0]) + " and " + getName(selection[1]));
+
+                    alert.show();
+                    return;
+                }
+
+
+                Alert alert = new Alert(Alert.AlertType.INFORMATION);
+                alert.setTitle("Message");
+                alert.setHeaderText("The path from " + node1 + " to " + node2 + ":");
+                TextArea textArea = new TextArea();
+                textArea.setEditable(false);
+
+
+                for (Edge<T> edge : setOfEdges) {
+                    T destination = edge.getDestination();
+                    String name = edge.getName();
+                    int time = edge.getWeight();
+                    totalTime += time;
+                    textArea.appendText("to " + destination + " by " + name + " takes " + time + "\n");
+                }
+                textArea.appendText("Total: " + totalTime);
+
+                alert.getDialogPane().setContent(textArea);
+
+                alert.show();
+
+            }
+        }
+        findPath.setOnAction(new FindPathHandler());
 
         primaryStage.setScene(scene);
         primaryStage.show();
-        primaryStage.setMinHeight(new Image("europa.gif").getHeight() + topVBox.getHeight());
+        primaryStage.setMinHeight(new Image(imagePath).getHeight() + topVBox.getHeight());
 
 
     }
@@ -690,14 +819,6 @@ public class PathFinder<T> extends Application {
         Line line = new Line(from.getX(), from.getY(), to.getX(), to.getY());
         center.getChildren().add(line);
 
-    }
-
-    public static class openFileHandler implements EventHandler<ActionEvent> {
-
-        @Override
-        public void handle(ActionEvent actionEvent) {
-
-        }
     }
 
     public T getName(Circle circle) {
