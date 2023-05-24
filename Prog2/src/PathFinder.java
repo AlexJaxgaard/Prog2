@@ -13,10 +13,8 @@ import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.image.WritableImage;
 import javafx.scene.input.MouseEvent;
-import javafx.scene.layout.BorderPane;
-import javafx.scene.layout.HBox;
-import javafx.scene.layout.Pane;
-import javafx.scene.layout.VBox;
+import javafx.scene.layout.*;
+import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
 import javafx.scene.shape.Line;
 import javafx.stage.Stage;
@@ -42,6 +40,7 @@ public class PathFinder<T> extends Application {
     private BorderPane root = new BorderPane();
     private Pane center = new Pane();
 
+    private Circle[] selection = new Circle[2];
     ListGraph<T> graph;
 
     @Override
@@ -127,10 +126,59 @@ public class PathFinder<T> extends Application {
             }
         }
         newMap.setOnAction(new newMapHandler());
+
+        class mouseClickedOnCircle implements EventHandler<MouseEvent> {
+
+            @Override
+            public void handle(MouseEvent mouseEvent) {
+
+
+                Circle circle = (Circle) mouseEvent.getSource();
+
+                if (circle.getFill() == Color.BLUE) {
+                    if (selection[0] == null && selection[1] != null) {
+                        selection[0] = circle;
+                        selection[0].setFill(Color.RED);
+                    } else if (selection[0] != null && selection[1] == null) {
+                        selection[1] = circle;
+                        selection[1].setFill(Color.RED);
+                    } else if (selection[0] == null && selection[1] == null) {
+                        selection[0] = circle;
+                        selection[0].setFill(Color.RED);
+                    }
+                } else if (circle.getFill() == Color.RED) {
+                    if (selection[0] == circle) {
+                        selection[0].setFill(Color.BLUE);
+                        selection[0] = null;
+                    } else if (selection[1] == circle) {
+                        selection[1].setFill(Color.BLUE);
+                        selection[1] = null;
+                    }
+                }
+
+
+                for (T node : positions.keySet()) {
+
+                }
+            }
+        }
+
         class OpenFileHandler implements EventHandler<ActionEvent> {
 
             @Override
             public void handle(ActionEvent actionEvent) {
+                if (selection[0] != null && selection[1] == null) {
+                    selection[0].setFill(Color.BLUE);
+                    selection[0] = null;
+                } else if (selection[0] == null && selection[1] != null) {
+                    selection[1].setFill(Color.BLUE);
+                    selection[1] = null;
+                } else if (selection[0] != null && selection[1] != null) {
+                    selection[0].setFill(Color.BLUE);
+                    selection[1].setFill(Color.BLUE);
+                    selection[0] = null;
+                    selection[1] = null;
+                }
 
 
                 if (changesMade && !stateSaved) {
@@ -171,8 +219,11 @@ public class PathFinder<T> extends Application {
                     String current = lineSplit[i];
                     double xValue = parseDouble(lineSplit[i + 1]);
                     double yValue = parseDouble(lineSplit[i + 2]);
-                    Point2D point = new Point2D(xValue, yValue);
-                    positions.put((T) current, new Circle(xValue, yValue, 10));
+                    Circle circle = new Circle(xValue, yValue, 10);
+                    circle.setFill(Color.BLUE);
+                    circle.setOnMouseClicked(new mouseClickedOnCircle());
+                    System.out.println("Added click functionality for " + current);
+                    positions.put((T) current, circle);
                 }
 
 
@@ -180,7 +231,6 @@ public class PathFinder<T> extends Application {
                 //Adds points
                 for (T point : positions.keySet()) {
                     center.getChildren().add((positions.get(point)));
-                    //Circle circle = new Circle(positions.get(point).getX(), positions.get(point).getY(), 10);
                     graph.add(point);
 
                 }
@@ -207,17 +257,17 @@ public class PathFinder<T> extends Application {
                         return;
                     }
                     String node = newScanner.next();
-                    System.out.println("node: " + node);
+
 
                     String destination = newScanner.next();
-                    System.out.println("destination: " + destination);
+
 
                     String name = newScanner.next();
-                    System.out.println("name: " + name);
+
 
                     String weight = (newScanner.next());
                     int newWeight = Integer.parseInt(weight);
-                    System.out.println("weight: " + newWeight);
+
 
                     if (!graph.pathExists((T) node, (T) destination)) {
                         graph.connect((T) node, (T) destination, name, newWeight);
@@ -228,13 +278,104 @@ public class PathFinder<T> extends Application {
                     System.out.println(graph.getNodes());
                 }
 
-
+                changesMade = false;
+                stateSaved = true;
             }
 
 
         }
         open.setOnAction(new OpenFileHandler());
 
+        class NewConnectionHandler implements EventHandler<ActionEvent> {
+
+            @Override
+            public void handle(ActionEvent actionEvent) {
+                T node1 = (T) "";
+                T node2 = (T) "";
+                String nameOfConnection = "";
+                int timeOfConnection = 0;
+
+
+                if (selection[0] == null || selection[1] == null) {
+                    Alert alert = new Alert(Alert.AlertType.ERROR);
+
+                    alert.setContentText("Two places must be selected!");
+
+                    alert.show();
+                    return;
+                }
+
+                for (Map.Entry<T, Circle> entry : positions.entrySet()) {
+                    if (entry.getValue() == selection[0]) {
+                        node1 = entry.getKey();
+                    }
+                    if (entry.getValue() == selection[1]) {
+                        node2 = entry.getKey();
+                    }
+                }
+
+                if (graph.pathExists(node1, node2)) {
+                    Alert alert = new Alert(Alert.AlertType.ERROR);
+                    alert.setContentText("Path already exists!");
+                    alert.show();
+                    return;
+                }
+                TextInputDialog td = new TextInputDialog();
+                GridPane gridPane = new GridPane();
+                td.setTitle("Connection");
+                td.setHeaderText("Create connection between " + node1 + " to " + node2);
+                TextField nameField = new TextField();
+                TextField weightField = new TextField();
+                gridPane.addRow(0, new Label("Name:"), nameField);
+                gridPane.addRow(1, new Label("Time:"), weightField);
+                gridPane.setVgap(10);
+                gridPane.setHgap(10);
+                gridPane.setAlignment(Pos.CENTER);
+                td.getDialogPane().setContent(gridPane);
+
+
+                Optional<String> result = td.showAndWait();
+
+                if (!result.isPresent()) {
+                    return;
+                }
+
+                if (nameField.getCharacters().isEmpty()) {
+                    Alert alert = new Alert(Alert.AlertType.ERROR);
+                    alert.setHeaderText("Name cannot be empty!");
+                    alert.show();
+                    return;
+                }
+
+                nameOfConnection = nameField.getCharacters().toString();
+
+
+                if (weightField.getCharacters().isEmpty()) {
+                    Alert alert = new Alert(Alert.AlertType.ERROR);
+                    alert.setHeaderText("Time cannot be empty!");
+                    alert.show();
+                    return;
+                }
+
+                try {
+                    timeOfConnection = Integer.parseInt(weightField.getCharacters().toString());
+                } catch (Exception e) {
+                    Alert alert = new Alert(Alert.AlertType.ERROR);
+                    alert.setHeaderText("Time must be a number!");
+                    alert.show();
+                    return;
+                }
+
+                graph.connect(node1, node2, nameField.getCharacters().toString(), timeOfConnection);
+                System.out.println("Connected nodes");
+
+                drawLines(getPosition((String) node1), getPosition((String) node2));
+                stateSaved = false;
+                changesMade = true;
+
+            }
+        }
+        newConnection.setOnAction(new NewConnectionHandler());
 
         class saveFileHandler implements EventHandler<ActionEvent> {
 
@@ -333,6 +474,8 @@ public class PathFinder<T> extends Application {
                         Platform.exit();
                     }
 
+                } else if (!changesMade && stateSaved) {
+                    Platform.exit();
                 }
 
 
@@ -372,32 +515,79 @@ public class PathFinder<T> extends Application {
 
                 td.setHeaderText("Enter name of place:");
                 td.setTitle("New place");
+                Optional<String> result = td.showAndWait();
 
-
-                td.showAndWait();
+                center.setCursor(Cursor.DEFAULT);
                 newPlace.setDisable(false);
                 center.setOnMouseClicked(null);
-                if (td.getResult().isEmpty() || td.getResult().equals("") || td.equals(null)) {
-
+                String nameOfPlace = td.getResult();
+                if (!result.isPresent()) {
                     return;
+
                 }
 
 
-                String nameOfPlace = td.getResult();
                 System.out.println(nameOfPlace);
                 graph.add((T) nameOfPlace);
 
 
-                Circle circle = new Circle(xValue, yValue, 10);
+                Circle circle = new Circle(xValue, yValue, 10, Color.BLUE);
+                circle.setOnMouseClicked(new mouseClickedOnCircle());
                 positions.put((T) nameOfPlace, circle);
                 center.getChildren().add(circle);
-                center.setCursor(Cursor.DEFAULT);
+
 
                 changesMade = true;
                 stateSaved = false;
 
             }
         }
+
+        class ShowConnectionHandler implements EventHandler<ActionEvent> {
+
+            @Override
+            public void handle(ActionEvent actionEvent) {
+                if (selection[0] == null || selection[1] == null) {
+                    Alert alert = new Alert(Alert.AlertType.ERROR);
+
+                    alert.setContentText("Two places must be selected!");
+
+                    alert.show();
+                    return;
+                }
+                if (graph.getEdgeBetween(getName(selection[0]), getName(selection[1])) == null) {
+                    Alert alert = new Alert(Alert.AlertType.ERROR);
+
+                    alert.setContentText("No edge between " + getName(selection[0]) + " and " + getName(selection[1]));
+
+                    alert.show();
+                    return;
+                }
+
+                Edge<T> edge = graph.getEdgeBetween(getName(selection[0]), getName(selection[1]));
+
+                String name = edge.getName();
+                int weight = edge.getWeight();
+                TextInputDialog td = new TextInputDialog();
+                GridPane gridPane = new GridPane();
+                td.setTitle("Connection");
+                td.setHeaderText("Connection from " + getName(selection[0]) + " to " + getName(selection[1]));
+                TextField nameField = new TextField();
+                nameField.replaceText(0, 0, name);
+                nameField.setEditable(false);
+                TextField weightField = new TextField();
+                weightField.replaceText(0, 0, weight + "");
+                weightField.setEditable(false);
+                gridPane.addRow(0, new Label("Name:"), nameField);
+                gridPane.addRow(1, new Label("Time:"), weightField);
+                gridPane.setVgap(10);
+                gridPane.setHgap(10);
+                gridPane.setAlignment(Pos.CENTER);
+                td.getDialogPane().setContent(gridPane);
+                td.showAndWait();
+            }
+        }
+        showConnection.setOnAction(new ShowConnectionHandler());
 
         class newPlaceHandler implements EventHandler<ActionEvent> {
 
@@ -412,9 +602,69 @@ public class PathFinder<T> extends Application {
             }
         }
         newPlace.setOnAction(new newPlaceHandler());
-
         root.setTop(topVBox);
 
+        class ChangeConnectionHandler implements EventHandler<ActionEvent> {
+
+            @Override
+            public void handle(ActionEvent actionEvent) {
+                if (selection[0] == null || selection[1] == null) {
+                    Alert alert = new Alert(Alert.AlertType.ERROR);
+
+                    alert.setContentText("Two places must be selected!");
+
+                    alert.show();
+                    return;
+                }
+                if (graph.getEdgeBetween(getName(selection[0]), getName(selection[1])) == null) {
+                    Alert alert = new Alert(Alert.AlertType.ERROR);
+
+                    alert.setContentText("No edge between " + getName(selection[0]) + " and " + getName(selection[1]));
+
+                    alert.show();
+                    return;
+                }
+
+                Edge<T> edge = graph.getEdgeBetween(getName(selection[0]), getName(selection[1]));
+
+                String name = edge.getName();
+                int weight = edge.getWeight();
+
+                TextInputDialog td = new TextInputDialog();
+                GridPane gridPane = new GridPane();
+                td.setTitle("Connection");
+                td.setHeaderText("Change connection from " + getName(selection[0]) + " to " + getName(selection[1]));
+                TextField nameField = new TextField();
+                nameField.replaceText(0, 0, name);
+                nameField.setEditable(false);
+
+                TextField weightField = new TextField();
+
+
+                weightField.setEditable(true);
+                weightField.replaceText(0, 0, weight + "");
+                gridPane.addRow(0, new Label("Name:"), nameField);
+                gridPane.addRow(1, new Label("Time:"), weightField);
+                gridPane.setVgap(10);
+                gridPane.setHgap(10);
+                gridPane.setAlignment(Pos.CENTER);
+                td.getDialogPane().setContent(gridPane);
+                Optional<String> result = td.showAndWait();
+
+                try {
+                    graph.setConnectionWeight(getName(selection[0]), getName(selection[1]), Integer.parseInt(weightField.getCharacters().toString()));
+                } catch (Exception e) {
+                    Alert alert = new Alert(Alert.AlertType.ERROR);
+                    alert.setContentText("Weight must be a numeric type!");
+                    alert.show();
+                }
+
+
+            }
+        }
+        changeConncetion.setOnAction(new ChangeConnectionHandler());
+
+        class 
 
         primaryStage.setScene(scene);
         primaryStage.show();
@@ -435,10 +685,6 @@ public class PathFinder<T> extends Application {
 
     }
 
-    public void drawCircles(Circle circle) {
-
-    }
-
 
     private void drawLines(Point2D from, Point2D to) {
         Line line = new Line(from.getX(), from.getY(), to.getX(), to.getY());
@@ -452,6 +698,18 @@ public class PathFinder<T> extends Application {
         public void handle(ActionEvent actionEvent) {
 
         }
+    }
+
+    public T getName(Circle circle) {
+
+        for (Map.Entry<T, Circle> entry : positions.entrySet()) {
+            if (entry.getValue() == circle) {
+                return entry.getKey();
+            }
+        }
+        return null;
+
+
     }
 
 
