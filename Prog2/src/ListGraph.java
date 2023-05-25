@@ -1,3 +1,5 @@
+import javafx.scene.shape.Circle;
+
 import java.io.Serializable;
 import java.util.*;
 import java.util.Map.Entry;
@@ -8,11 +10,13 @@ import java.util.Map.Entry;
 
 public class ListGraph<T> implements Graph<T>, Serializable {
 
-    private final Map<T, Set<Edge<T>>> nodes = new HashMap<>();
+    private Map<String, Set<Edge<T>>> nodes = new HashMap<>();
 
     @Override
     public void add(T node) {
-        nodes.putIfAbsent(node, new HashSet<>());
+        nodes.putIfAbsent((String) node, new HashSet<>());
+
+
     }
 
     @Override
@@ -30,17 +34,17 @@ public class ListGraph<T> implements Graph<T>, Serializable {
             throw new IllegalStateException();
         }
 
-        for (Entry<T, Set<Edge<T>>> node : nodes.entrySet()) {
+        for (Entry<String, Set<Edge<T>>> node : nodes.entrySet()) {
             if (node.getKey().equals(node1)) {
                 node.getValue().add(new Edge<>(node2, weight, name));
-                System.out.println("Added " + node2 + " to " + node1);
+
             }
         }
 
-        for (Entry<T, Set<Edge<T>>> node : nodes.entrySet()) {
+        for (Entry<String, Set<Edge<T>>> node : nodes.entrySet()) {
             if (node.getKey().equals(node2)) {
                 node.getValue().add(new Edge<>(node1, weight, name));
-                System.out.println("Added " + node1 + " to " + node2);
+
             }
         }
 
@@ -64,11 +68,17 @@ public class ListGraph<T> implements Graph<T>, Serializable {
 
     @Override
     public Set<T> getNodes() {
-        return new HashSet<T>(nodes.keySet());
+        return new HashSet<T>((Collection<? extends T>) nodes.keySet());
     }
 
     @Override
     public Collection<Edge<T>> getEdgesFrom(T node) {
+
+        if (node instanceof Circle) {
+            String name = PathFinder.getName((Circle) node);
+            node = (T) name;
+        }
+
 
         if (!nodes.containsKey(node)) {
             throw new NoSuchElementException("Didn't find any nodes!");
@@ -79,8 +89,19 @@ public class ListGraph<T> implements Graph<T>, Serializable {
 
     @Override
     public Edge<T> getEdgeBetween(T node1, T node2) {
-        if (!nodes.containsKey(node1) || !nodes.containsKey(node2)) {
-            throw new NoSuchElementException();
+
+        if (node1 instanceof Circle) {
+            String name = PathFinder.getName((Circle) node1);
+            node1 = (T) name;
+        }
+
+        if (node2 instanceof Circle) {
+            String name = PathFinder.getName((Circle) node2);
+            node2 = (T) name;
+        }
+
+        if (!nodes.containsKey((String) node1) || !nodes.containsKey((String) node2)) {
+            throw new NoSuchElementException("Nodes not found in the graph");
         }
 
         for (Edge<T> edge : getEdgesFrom(node1)) {
@@ -90,12 +111,20 @@ public class ListGraph<T> implements Graph<T>, Serializable {
         }
 
         return null;
-
     }
 
     @Override
     public void disconnect(T node1, T node2) {
-
+        if (node1 instanceof Circle) {
+            String name = PathFinder.getName((Circle) node1);
+            node1 = (T) name;
+        }
+        final T nodeOne = node1;
+        final T nodeTwo = node2;
+        if (node2 instanceof Circle) {
+            String name = PathFinder.getName((Circle) node2);
+            node2 = (T) name;
+        }
 
         if (!nodes.containsKey(node2) || !nodes.containsKey(node1)) {
             throw new NoSuchElementException("No such city");
@@ -108,15 +137,15 @@ public class ListGraph<T> implements Graph<T>, Serializable {
             throw new IllegalStateException();
         }
 
-        for (Entry<T, Set<Edge<T>>> node : nodes.entrySet()) {
+        for (Entry<String, Set<Edge<T>>> node : nodes.entrySet()) {
             if (node.getKey().equals(node2)) {
-                node.getValue().removeIf(edge -> edge.getDestination().equals(node1));
+                node.getValue().removeIf(edge -> edge.getDestination().equals(nodeOne));
             }
         }
 
-        for (Entry<T, Set<Edge<T>>> node : nodes.entrySet()) {
+        for (Entry<String, Set<Edge<T>>> node : nodes.entrySet()) {
             if (node.getKey().equals(node1)) {
-                node.getValue().removeIf(edge -> edge.getDestination().equals(node2));
+                node.getValue().removeIf(edge -> edge.getDestination().equals(nodeTwo));
             }
         }
 
@@ -125,6 +154,11 @@ public class ListGraph<T> implements Graph<T>, Serializable {
 
     @Override
     public void remove(T node) {
+        String name = "";
+        if (node instanceof Circle) {
+            name = PathFinder.getName((Circle) node);
+
+        }
 
         if (!nodes.containsKey(node)) {
             throw new NoSuchElementException();
@@ -141,7 +175,7 @@ public class ListGraph<T> implements Graph<T>, Serializable {
     private void dfs(T current, T searchedFor, Set<T> visited) {
         visited.add(current);
         if (current.equals(searchedFor)) {
-            System.out.println("Found!");
+
             return;
         }
 
@@ -161,7 +195,15 @@ public class ListGraph<T> implements Graph<T>, Serializable {
 
     @Override
     public boolean pathExists(T from, T to) {
+        if (from instanceof Circle) {
+            String name = PathFinder.getName((Circle) from);
+            from = (T) name;
+        }
 
+        if (to instanceof Circle) {
+            String name = PathFinder.getName((Circle) to);
+            to = (T) name;
+        }
 
         Set<T> visited = new HashSet<>();
         dfs(from, to, visited);
@@ -170,6 +212,18 @@ public class ListGraph<T> implements Graph<T>, Serializable {
 
     @Override
     public List<Edge<T>> getPath(T from, T to) {
+
+        if (from instanceof Circle) {
+            String name = PathFinder.getName((Circle) from);
+            from = (T) name;
+        }
+
+        if (to instanceof Circle) {
+            String name = PathFinder.getName((Circle) to);
+            to = (T) name;
+        }
+
+
         Map<T, T> connections = new HashMap<>();
         connections.put(from, null);
 
@@ -210,7 +264,7 @@ public class ListGraph<T> implements Graph<T>, Serializable {
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
-        for (T city : nodes.keySet()) {
+        for (String city : nodes.keySet()) {
             sb.append(city).append(":").append(nodes.get(city)).append("\n");
         }
         return sb.toString();
