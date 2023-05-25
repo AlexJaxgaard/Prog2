@@ -7,6 +7,7 @@ import javafx.geometry.Insets;
 import javafx.geometry.Point2D;
 import javafx.geometry.Pos;
 import javafx.scene.Cursor;
+import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.SnapshotParameters;
 import javafx.scene.control.*;
@@ -37,7 +38,7 @@ import static java.lang.Double.parseDouble;
 // Emil Calmels emca3600
 public class PathFinder extends Application {
     private static Map<String, Circle> positions = new HashMap<>();
-    private String imagePath = getImagePath();
+    private String imagePath = "europa.gif";
 
     private boolean changesMade = false;
 
@@ -141,6 +142,10 @@ public class PathFinder extends Application {
 
 
                 center.getChildren().clear();
+                for (Node node : center.getChildren()) {
+                    center.getChildren().remove(node);
+                    System.out.println("removed " + node);
+                }
 
                 root.getChildren().remove(center);
 
@@ -162,8 +167,13 @@ public class PathFinder extends Application {
                     center = new Pane();
                     center.setId("outputArea");
                 }
-                Image image = new Image(getImagePath());
+
+                Image image = new Image(imagePath);
+
                 ImageView imageView = new ImageView(image);
+
+                imagePath = imageView.getImage().getUrl();
+
                 findPath.setDisable(false);
                 showConnection.setDisable(false);
                 newPlace.setDisable(false);
@@ -267,14 +277,15 @@ public class PathFinder extends Application {
                 }
 
 
-                imagePath = getImagePath();
-                sc.nextLine();
+                imagePath = sc.nextLine();
                 java.lang.String line = sc.nextLine();
 
                 if (line.isEmpty()) {
                     return;
                 }
-
+                if (!mapOpen) {
+                    new NewMapHandler().handle(new ActionEvent());
+                }
                 java.lang.String[] lineSplit = line.split("\\n|;");
 
                 for (int i = 0; i < lineSplit.length; i += 3) {
@@ -285,27 +296,13 @@ public class PathFinder extends Application {
                     circle.setFill(Color.BLUE);
                     circle.setOnMouseClicked(new MouseClickedOnCircle());
                     String node = (String) current;
-                    positions.put(node, circle);
-                    graph.add(node);
-                    center.getChildren().add(circle);
-                    for (String point : positions.keySet()) {
-                        if (!graph.getNodes().contains(point)) {
-                            graph.add(point);
-                        }
 
-
+// Check if the node already exists in positions
+                    if (!positions.containsKey(node) && !center.getChildren().contains(circle)) {
+                        positions.put(node, circle);
+                        graph.add(node);
+                        center.getChildren().add(circle);
                     }
-                }
-
-
-                //Adds points
-                for (String point : positions.keySet()) {
-                    if (!graph.getNodes().contains(point)) {
-                        graph.add(point);
-                    }
-                    center.getChildren().add(positions.get(point));
-
-
                 }
 
 
@@ -878,22 +875,17 @@ public class PathFinder extends Application {
     }
 
     private String getImagePath() {
-
         File file = new File("europa.graph");
-
-
-        Scanner sc = null;
-
+        Scanner newScanner = null;
         try {
-            sc = new Scanner(file);
+            newScanner = new Scanner(file);
         } catch (FileNotFoundException e) {
-            return "europa.gif";
+            throw new RuntimeException(e);
         }
 
+        return newScanner.nextLine();
 
-        String path = sc.nextLine();
-        String[] parts = path.split(":");
-        return parts[1];
+
     }
 
     private void drawLines(Point2D from, Point2D to) {

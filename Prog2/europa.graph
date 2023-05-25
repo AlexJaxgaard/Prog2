@@ -1,2 +1,6 @@
 file:europa.gif
 a;273.0;103.0;ab;350.0;62.0;abc;246.0;76.0
+a;abc;b;1
+a;ab;a;1
+ab;a;a;1
+abc;a;b;1
