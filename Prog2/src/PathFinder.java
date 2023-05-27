@@ -223,144 +223,6 @@ public class PathFinder extends Application {
             }
         }
 
-        class OpenFileHandler implements EventHandler<ActionEvent> {
-
-            @Override
-            public void handle(ActionEvent actionEvent) {
-
-
-                if (changesMade && !stateSaved) {
-                    Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
-                    alert.setTitle("Warning!");
-                    alert.setHeaderText("Unsaved changes, continue anyway?");
-                    alert.setContentText("");
-
-                    Optional<ButtonType> result = alert.showAndWait();
-
-                    if (result.get() != ButtonType.OK) {
-                        return;
-                    } else {
-
-                        new NewMapHandler().handle(new ActionEvent());
-
-                    }
-                }
-                if (selection[0] != null && selection[1] == null) {
-                    selection[0].setFill(Color.BLUE);
-                    selection[0] = null;
-                } else if (selection[0] == null && selection[1] != null) {
-                    selection[1].setFill(Color.BLUE);
-                    selection[1] = null;
-                } else if (selection[0] != null && selection[1] != null) {
-                    selection[0].setFill(Color.BLUE);
-                    selection[1].setFill(Color.BLUE);
-                    selection[0] = null;
-                    selection[1] = null;
-                }
-
-
-                File file = new File("europa.graph");
-
-
-                Scanner sc = null;
-                try {
-                    sc = new Scanner(file);
-                } catch (FileNotFoundException e) {
-                    Alert alert = new Alert(Alert.AlertType.ERROR);
-                    alert.show();
-                    return;
-                }
-                if (!sc.hasNext()) {
-                    Alert alert = new Alert(Alert.AlertType.ERROR);
-                    alert.show();
-                    return;
-                }
-
-
-                imagePath = sc.nextLine();
-                java.lang.String line = sc.nextLine();
-
-                if (line.isEmpty()) {
-                    return;
-                }
-                if (!mapOpen) {
-                    new NewMapHandler().handle(new ActionEvent());
-                }
-                java.lang.String[] lineSplit = line.split("\\n|;");
-
-                for (int i = 0; i < lineSplit.length; i += 3) {
-                    String current = lineSplit[i];
-                    double xvalue = parseDouble(lineSplit[i + 1]);
-                    double yvalue = parseDouble(lineSplit[i + 2]);
-                    Circle circle = new Circle(xvalue, yvalue, 10);
-                    circle.setFill(Color.BLUE);
-                    circle.setOnMouseClicked(new MouseClickedOnCircle());
-                    String node = (String) current;
-
-// Check if the node already exists in positions
-                    if (!positions.containsKey(node) && !center.getChildren().contains(circle)) {
-                        positions.put(node, circle);
-                        graph.add(node);
-                        center.getChildren().add(circle);
-                    }
-                }
-
-
-                for (int i = 0; i < center.getChildren().size(); i++) {
-                    if (center.getChildren().get(i) instanceof Circle) {
-                        center.getChildren().get(i).setViewOrder(-1);
-                    }
-                }
-
-                //Add connections
-
-
-                Scanner newScanner = null;
-                try {
-                    newScanner = new Scanner(file);
-                } catch (FileNotFoundException e) {
-                    throw new RuntimeException(e);
-                }
-
-                newScanner.nextLine();
-                newScanner.nextLine();
-
-                newScanner.useDelimiter(Pattern.compile("(\\n)|;"));
-                while (newScanner.hasNextLine()) {
-
-
-                    if (!newScanner.hasNext()) {
-                        return;
-                    }
-                    java.lang.String node = newScanner.next();
-
-
-                    java.lang.String destination = newScanner.next();
-
-
-                    java.lang.String name = newScanner.next();
-
-
-                    java.lang.String weight = newScanner.next();
-                    int newWeight = Integer.parseInt(weight);
-
-
-                    if (!graph.pathExists((String) node, (String) destination)) {
-                        graph.connect((String) node, (String) destination, name, newWeight);
-
-                    }
-                    drawLines(getPosition(node), getPosition(destination));
-
-
-                }
-
-                changesMade = false;
-                stateSaved = true;
-            }
-
-
-        }
-        open.setOnAction(new OpenFileHandler());
 
         class NewConnectionHandler implements EventHandler<ActionEvent> {
 
@@ -533,7 +395,144 @@ public class PathFinder extends Application {
             }
         }
         save.setOnAction(new SaveFileHandler());
+        class OpenFileHandler implements EventHandler<ActionEvent> {
 
+            @Override
+            public void handle(ActionEvent actionEvent) {
+
+
+                if (changesMade && !stateSaved) {
+                    Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+                    alert.setTitle("Warning!");
+                    alert.setHeaderText("Unsaved changes, continue anyway?");
+                    alert.setContentText("");
+
+                    Optional<ButtonType> result = alert.showAndWait();
+
+                    if (result.get() != ButtonType.OK) {
+                        return;
+                    } else {
+
+                        new NewMapHandler().handle(new ActionEvent());
+
+                    }
+                }
+                if (selection[0] != null && selection[1] == null) {
+                    selection[0].setFill(Color.BLUE);
+                    selection[0] = null;
+                } else if (selection[0] == null && selection[1] != null) {
+                    selection[1].setFill(Color.BLUE);
+                    selection[1] = null;
+                } else if (selection[0] != null && selection[1] != null) {
+                    selection[0].setFill(Color.BLUE);
+                    selection[1].setFill(Color.BLUE);
+                    selection[0] = null;
+                    selection[1] = null;
+                }
+
+
+                File file = new File("europa.graph");
+
+
+                Scanner sc = null;
+                try {
+                    sc = new Scanner(file);
+                } catch (FileNotFoundException e) {
+                    Alert alert = new Alert(Alert.AlertType.ERROR);
+                    alert.show();
+                    return;
+                }
+                if (!sc.hasNext()) {
+                    Alert alert = new Alert(Alert.AlertType.ERROR);
+                    alert.show();
+                    return;
+                }
+
+
+                imagePath = sc.nextLine();
+                java.lang.String line = sc.nextLine();
+
+                if (line.isEmpty()) {
+                    return;
+                }
+                if (!mapOpen) {
+                    new NewMapHandler().handle(new ActionEvent());
+                }
+                java.lang.String[] lineSplit = line.split("\\n|;");
+
+                for (int i = 0; i < lineSplit.length; i += 3) {
+                    String current = lineSplit[i];
+                    double xvalue = parseDouble(lineSplit[i + 1]);
+                    double yvalue = parseDouble(lineSplit[i + 2]);
+                    Circle circle = new Circle(xvalue, yvalue, 10);
+                    circle.setFill(Color.BLUE);
+                    circle.setOnMouseClicked(new MouseClickedOnCircle());
+                    String node = (String) current;
+
+// Check if the node already exists in positions
+                    if (!positions.containsKey(node) && !center.getChildren().contains(circle)) {
+                        positions.put(node, circle);
+                        graph.add(node);
+                        center.getChildren().add(circle);
+                    }
+                }
+
+
+                for (int i = 0; i < center.getChildren().size(); i++) {
+                    if (center.getChildren().get(i) instanceof Circle) {
+                        center.getChildren().get(i).setViewOrder(-1);
+                    }
+                }
+
+                //Add connections
+
+
+                Scanner newScanner = null;
+                try {
+                    newScanner = new Scanner(file);
+                } catch (FileNotFoundException e) {
+                    throw new RuntimeException(e);
+                }
+
+                newScanner.nextLine();
+                newScanner.nextLine();
+
+                newScanner.useDelimiter(Pattern.compile("(\\n)|;"));
+                while (newScanner.hasNextLine()) {
+
+
+                    if (!newScanner.hasNext()) {
+                        return;
+                    }
+                    java.lang.String node = newScanner.next();
+
+
+                    java.lang.String destination = newScanner.next();
+
+
+                    java.lang.String name = newScanner.next();
+
+
+                    java.lang.String weight = newScanner.next();
+                    int newWeight = Integer.parseInt(weight);
+
+
+                    if (!graph.pathExists((String) node, (String) destination)) {
+                        graph.connect((String) node, (String) destination, name, newWeight);
+
+                    }
+                    drawLines(getPosition(node), getPosition(destination));
+
+
+                }
+                new SaveFileHandler().handle(new ActionEvent());
+                changesMade = false;
+                stateSaved = true;
+            }
+
+
+        }
+        open.setOnAction(new OpenFileHandler());
 
         class SaveImageHandler implements EventHandler<ActionEvent> {
 
