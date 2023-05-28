@@ -1,5 +1,4 @@
 import javafx.application.Application;
-import javafx.application.Platform;
 import javafx.embed.swing.SwingFXUtils;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
@@ -38,8 +37,8 @@ import static java.lang.Double.parseDouble;
 // Emil Calmels emca3600
 public class PathFinder extends Application {
     private static Map<String, Circle> positions = new HashMap<>();
-    private String imagePath = "europa.gif";
-
+    private String imagePath = findImagePath();
+    private String oldImagePath = "europa.gif";
     private boolean changesMade = false;
 
     private boolean mapOpen = false;
@@ -144,7 +143,7 @@ public class PathFinder extends Application {
                 center.getChildren().clear();
                 for (Node node : center.getChildren()) {
                     center.getChildren().remove(node);
-                    System.out.println("removed " + node);
+
                 }
 
                 root.getChildren().remove(center);
@@ -169,10 +168,20 @@ public class PathFinder extends Application {
                 }
 
                 Image image = new Image(imagePath);
+                oldImagePath = imagePath;
+
+                if (image.getHeight() < 10) {
+                    imagePath = oldImagePath;
+                    image = new Image(oldImagePath);
+                }
+
 
                 ImageView imageView = new ImageView(image);
+                File file = new File(imageView.getImage().getUrl());
 
-                imagePath = imageView.getImage().getUrl();
+
+                imagePath = file.getName();
+
 
                 findPath.setDisable(false);
                 showConnection.setDisable(false);
@@ -184,8 +193,8 @@ public class PathFinder extends Application {
                 center.getChildren().addAll(imageView);
                 root.setCenter(center);
 
-                stateSaved = true;
-                changesMade = false;
+                stateSaved = false;
+                changesMade = true;
                 mapOpen = true;
 
             }
@@ -437,43 +446,56 @@ public class PathFinder extends Application {
                 Scanner sc = null;
                 try {
                     sc = new Scanner(file);
-                } catch (FileNotFoundException e) {
-                    Alert alert = new Alert(Alert.AlertType.ERROR);
-                    alert.show();
-                    return;
-                }
-                if (!sc.hasNext()) {
+                } catch (Exception e) {
                     Alert alert = new Alert(Alert.AlertType.ERROR);
                     alert.show();
                     return;
                 }
 
 
-                imagePath = sc.nextLine();
+                if (!sc.hasNext() || !sc.hasNextLine()) {
+                    Alert alert = new Alert(Alert.AlertType.ERROR);
+                    alert.show();
+                    return;
+                }
+
+
+                if (!sc.hasNext() && !sc.hasNextLine()) {
+                    Alert alert = new Alert(Alert.AlertType.ERROR);
+                    alert.show();
+                    return;
+                }
+
+
+                String newMapImagePath = sc.nextLine();
+                String[] array = newMapImagePath.split(":");
+                imagePath = array[1];
+                new NewMapHandler().handle(new ActionEvent());
                 java.lang.String line = sc.nextLine();
-
-                if (line.isEmpty()) {
+                if (line.isEmpty() || line == null) {
                     return;
                 }
-                if (!mapOpen) {
-                    new NewMapHandler().handle(new ActionEvent());
-                }
-                java.lang.String[] lineSplit = line.split("\\n|;");
+
+
+                java.lang.String[] lineSplit = line.split(";");
 
                 for (int i = 0; i < lineSplit.length; i += 3) {
                     String current = lineSplit[i];
                     double xvalue = parseDouble(lineSplit[i + 1]);
                     double yvalue = parseDouble(lineSplit[i + 2]);
                     Circle circle = new Circle(xvalue, yvalue, 10);
+                    circle.setId(current);
                     circle.setFill(Color.BLUE);
                     circle.setOnMouseClicked(new MouseClickedOnCircle());
                     String node = (String) current;
 
 // Check if the node already exists in positions
                     if (!positions.containsKey(node) && !center.getChildren().contains(circle)) {
+
                         positions.put(node, circle);
                         graph.add(node);
                         center.getChildren().add(circle);
+
                     }
                 }
 
@@ -550,7 +572,7 @@ public class PathFinder extends Application {
                 WritableImage image = center.snapshot(new SnapshotParameters(), null);
 
 
-                File file = new File("./src/capture.png");
+                File file = new File("capture.png");
 
                 try {
                     ImageIO.write(SwingFXUtils.fromFXImage(image, null), "png", file);
@@ -575,24 +597,7 @@ public class PathFinder extends Application {
 
             @Override
             public void handle(ActionEvent actionEvent) {
-                if (changesMade && !stateSaved) {
-                    Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
-                    alert.setTitle("Warning!");
-                    alert.setHeaderText("Unsaved changes, exit anyway?");
-                    alert.setContentText("");
-
-                    Optional<ButtonType> result = alert.showAndWait();
-
-                    if (result.get() != ButtonType.OK) {
-                        actionEvent.consume();
-                    } else {
-                        Platform.exit();
-                    }
-
-                } else if (!changesMade && stateSaved) {
-                    Platform.exit();
-                }
-
+                primaryStage.fireEvent(new WindowEvent(primaryStage, WindowEvent.WINDOW_CLOSE_REQUEST));
 
             }
         }
@@ -602,20 +607,15 @@ public class PathFinder extends Application {
                 if (changesMade && !stateSaved) {
                     Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
                     alert.setTitle("Warning!");
-                    alert.setHeaderText("Unsaved changes, exit anyway?");
-                    alert.setContentText("");
+                    alert.setContentText("Unsaved changes, exit anyway?");
+                    
 
                     Optional<ButtonType> result = alert.showAndWait();
 
                     if (result.get() != ButtonType.OK) {
                         windowEvent.consume();
-                    } else {
-                        Platform.exit();
                     }
-
-
                 }
-
             }
         });
         exit.setOnAction(new ExitProgramHandler());
@@ -873,19 +873,25 @@ public class PathFinder extends Application {
 
     }
 
-    private String getImagePath() {
-        File file = new File("europa.graph");
-        Scanner newScanner = null;
-        try {
-            newScanner = new Scanner(file);
-        } catch (FileNotFoundException e) {
-            throw new RuntimeException(e);
-        }
 
-        return newScanner.nextLine();
+    private String findImagePath() {
+        //Image path is on first line of europa.graph
+        File file = new File("europa.graph");
+        String newImagePath = "";
+
+        try {
+            Scanner scanner = new Scanner(file);
+            String[] newFileArray = scanner.nextLine().split(":");
+            newImagePath = newFileArray[1];
+            scanner.close();
+            return newImagePath;
+        } catch (FileNotFoundException e) {
+            return "europa.gif";
+        }
 
 
     }
+
 
     private void drawLines(Point2D from, Point2D to) {
         Line line = new Line(from.getX(), from.getY(), to.getX(), to.getY());
